@@ -1,0 +1,21 @@
+Meeting Transcript - example-meeting-001
+Date: 2024-01-15 14:30:00
+Duration: 45:30
+Participants: Speaker A, Speaker B, Speaker C
+================================================================================
+
+[00:00] Speaker A: Hello everyone, this is John Smith from the engineering team. Thanks for joining our weekly standup.
+[00:05] Speaker B: Hi John, Sarah Johnson here from product management. Looking forward to hearing the updates.
+[00:10] Speaker C: Good afternoon, I'm Mike Chen from design. Ready to discuss the new features.
+[00:15] Speaker A: Great! Let's start with the sprint review. Sarah, can you give us an overview of what we accomplished?
+[00:20] Speaker B: Absolutely. We completed the user authentication module and the dashboard redesign. Mike's team did excellent work on the UI components.
+[00:25] Speaker C: Thanks Sarah! The design team really enjoyed working on this project. We've got some great feedback from user testing.
+[00:30] Speaker A: That's fantastic news. John here - I want to mention that we've also improved the backend performance by 40%.
+[00:35] Speaker B: Excellent work John! That should really help with user experience. Mike, what's next on the design roadmap?
+[00:40] Speaker C: Well, we're planning to work on the mobile app interface next. Sarah, do you have any specific requirements for that?
+[00:45] Speaker B: Yes, I've prepared a detailed spec document. I'll share it with both John and Mike by end of day.
+[00:50] Speaker A: Perfect. John from engineering - we should also discuss the deployment timeline for the new features.
+[00:55] Speaker C: Mike here - I think we should coordinate the design handoff with the engineering team.
+[01:00] Speaker B: Agreed. Sarah Johnson signing off - great meeting everyone!
+[01:05] Speaker A: Thanks Sarah and Mike. John Smith out.
+[01:10] Speaker C: Mike Chen here - have a great rest of the day team! 
