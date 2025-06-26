@@ -51,22 +51,17 @@ class LLMProcessor:
                     "max_tokens": 4000
                 }
             }
-            
             if system_prompt:
                 payload["system"] = system_prompt
-            
             response = requests.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
                 timeout=120
             )
-            
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
-            
             result = response.json()
             return result.get("response", "")
-            
         except Exception as e:
             print(f"Error calling Ollama: {str(e)}")
             raise
@@ -332,7 +327,8 @@ Only include events that have specific dates and times mentioned. If no clear ev
         
         # Add transcript segments
         for segment in transcript.segments:
-            timestamp = f"[{segment.start//1000//60:02d}:{segment.start//1000%60:02d}]"
+            start = int(segment.start)
+            timestamp = f"[{start//1000//60:02d}:{start//1000%60:02d}]"
             text_parts.append(f"{timestamp} Speaker {segment.speaker}: {segment.text}")
         
         return "\n".join(text_parts)
@@ -384,16 +380,17 @@ Only include events that have specific dates and times mentioned. If no clear ev
         # Prepare transcript text for analysis
         transcript_lines = []
         for segment in transcript.segments:
-            timestamp = f"[{segment.start//1000//60:02d}:{segment.start//1000%60:02d}]"
+            start = int(segment.start)
+            timestamp = f"[{start//1000//60:02d}:{start//1000%60:02d}]"
             transcript_lines.append(f"{timestamp} {segment.speaker}: {segment.text}")
         transcript_text = "\n".join(transcript_lines)
-
         system_prompt = (
             "You are an expert meeting assistant specializing in speaker identification. "
             "Given a meeting transcript with speaker labels and their utterances, "
-            "infer the most likely real names for each speaker label based on context clues, "
-            "introductions, self-identifications, or references by other speakers. "
-            "Look for patterns like: 'Hi, I'm John', 'This is Sarah speaking', 'John mentioned...', etc. "
+            "infer the most likely real names for each speaker label by analyzing the context of greetings, references, and replies. "
+            "Do NOT assign a name to a speaker just because their name is mentioned in a greeting. "
+            "Instead, deduce the mapping by observing how speakers address each other and how names are reciprocated in conversation. "
+            "For example, if Speaker A says 'Hey Jessica!' and Speaker B replies 'I'm doing great, Tom', then Speaker A is Tom and Speaker B is Jessica. "
             "If a name cannot be determined with reasonable confidence, keep the original label. "
             "Output only a JSON mapping of speaker labels to names."
         )
@@ -403,39 +400,56 @@ Please analyze this meeting transcript and infer the real names for each speaker
 
 {transcript_text}
 
-Provide a JSON mapping of speaker labels to inferred names. For example:
+Use the following logic:
+- If Speaker A greets 'Jessica' and Speaker B replies to 'Tom', infer Speaker A is Tom and Speaker B is Jessica.
+- If a speaker is addressed by name, and another speaker responds with a reciprocal greeting or reference, use that to deduce identities.
+- Do NOT assign a name to a speaker just because their name is mentioned in a greeting.
+- Only change labels where you can confidently infer a name from the context.
+
+Examples:
+Example 1:
+Speaker A: Hey Jessica! How have you been?
+Speaker B: I'm doing great, Tom. Thanks for asking.
+
+Mapping:
 {{
-  "A": "John Smith",
-  "B": "Sarah Johnson",
-  "C": "C"
+  "A": "Tom",
+  "B": "Jessica"
 }}
 
-Only change labels where you can confidently infer a name from the context.
-Look for:
-- Self-introductions ("Hi, I'm Alex")
-- Direct references ("Hey Jessica")
-- Context clues that reveal names
+Example 2:
+Speaker A: Hi Team, how are the updates coming along?
+Speaker B: Hi Janet, from my end, I should be wrapping up soon and will pass it on to Ravi soon.
+Speaker C: Once I get the update from Todd, I'll need a couple of days before sending it back to you Janet.
+
+Mapping:
+{{
+  "A": "Janet",
+  "B": "Todd",
+  "C": "Ravi"
+}}
+
+Now, provide a JSON mapping of speaker labels to inferred names for the transcript above. If you cannot confidently infer a name, keep the original label.
 """
-        
         try:
             response = self._call_ollama(prompt, system_prompt)
-            mapping = self.extract_first_json_block(response)
-            
+            try:
+                mapping = self.extract_first_json_block(response)
+            except Exception as parse_exc:
+                import traceback; traceback.print_exc()
+                raise
             if not isinstance(mapping, dict):
                 raise ValueError("Response is not a valid dictionary")
-            
             # Validate the mapping
             validated_mapping = {}
             for speaker_label, inferred_name in mapping.items():
                 if isinstance(speaker_label, str) and isinstance(inferred_name, str):
                     validated_mapping[speaker_label] = inferred_name
-            
-            print(f"🔍 LLM inferred speaker mapping: {validated_mapping}")
             return validated_mapping
-            
         except Exception as e:
             print(f"Error inferring speaker names: {e}")
-            print(f"Raw response: {response}")
+            print(f"Raw response: {locals().get('response', None)}")
+            import traceback; traceback.print_exc()
             return {}
 
     def analyze_speaker_names_from_text(self, transcript_text: str) -> dict:
