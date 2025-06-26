@@ -61,17 +61,20 @@ class AIAgent:
             # Step 1.5: Infer speaker names and relabel transcript
             print("Step 1.5: Inferring speaker names and relabeling transcript...")
             speaker_map = self.llm_processor.infer_speaker_names(transcript)
-            print("Speaker mapping inferred by LLM:", speaker_map)
             if speaker_map:
-                # Relabel segments
-                for segment in transcript.segments:
-                    if segment.speaker in speaker_map:
-                        segment.speaker = speaker_map[segment.speaker]
-                # Relabel participants
-                for speaker in transcript.speakers:
-                    if speaker.speaker_id in speaker_map:
-                        speaker.speaker_id = speaker_map[speaker.speaker_id]
-                print(f"✅ Applied speaker names: {speaker_map}")
+                try:
+                    # Relabel segments
+                    for segment in transcript.segments:
+                        if segment.speaker in speaker_map:
+                            segment.speaker = speaker_map[segment.speaker]
+                    # Relabel participants
+                    for speaker in transcript.speakers:
+                        if speaker.speaker_id in speaker_map:
+                            speaker.speaker_id = speaker_map[speaker.speaker_id]
+                    print(f"✅ Applied speaker names: {speaker_map}")
+                except Exception as e:
+                    import traceback; traceback.print_exc()
+                    raise
             else:
                 print("ℹ️  No speaker names could be inferred, keeping original labels")
 
